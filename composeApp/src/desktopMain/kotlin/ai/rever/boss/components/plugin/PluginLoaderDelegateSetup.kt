@@ -261,21 +261,13 @@ actual object PluginLoaderDelegateSetup {
     internal fun persistRestartLimitDisable(
         pluginId: String,
         restartAttempts: Int,
-        isInstalled: (String) -> Boolean = PluginPersistence::isInstalled,
-        jarPathOf: (String) -> String? = DynamicPluginManager::jarPathOf,
-        addInstalled: (String, String, Boolean) -> Unit = { id, jar, enabled ->
-            PluginPersistence.addInstalledPlugin(pluginId = id, jarPath = jar, enabled = enabled)
+        ensureInstalled: (String) -> Boolean = { id ->
+            PluginPersistence.isInstalled(id) || persistCrashDisable(id)
         },
         recordFailure: (String, Int) -> Boolean = { id, attempts ->
             PluginPersistence.recordRestartLimitExceeded(id, attempts)
         },
-    ): Boolean {
-        if (!isInstalled(pluginId)) {
-            val jarPath = jarPathOf(pluginId) ?: return false
-            addInstalled(pluginId, jarPath, false)
-        }
-        return recordFailure(pluginId, restartAttempts)
-    }
+    ): Boolean = ensureInstalled(pluginId) && recordFailure(pluginId, restartAttempts)
 
     /**
      * Owner of the background half of crash recovery (tab teardown, unload,

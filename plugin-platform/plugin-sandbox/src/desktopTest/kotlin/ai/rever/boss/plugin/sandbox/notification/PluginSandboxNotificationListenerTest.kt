@@ -21,7 +21,13 @@ class PluginSandboxNotificationListenerTest {
         )
         assertEquals(ToastType.ERROR, toasts.messages.single().type)
         assertEquals(ToastDuration.INDEFINITE, toasts.messages.single().duration)
-        assertEquals("Re-enable", toasts.messages.single().action?.label)
+        assertEquals(
+            "Re-enable",
+            toasts.messages
+                .single()
+                .action
+                ?.label,
+        )
     }
 
     @Test

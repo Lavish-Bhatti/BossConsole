@@ -411,7 +411,10 @@ class PluginSandboxManagerTest {
                                 disabledNotification.complete(pluginId)
                             }
 
-                            override fun onPluginRestartLimitExceeded(pluginId: String, restartAttempts: Int) {
+                            override fun onPluginRestartLimitExceeded(
+                                pluginId: String,
+                                restartAttempts: Int,
+                            ) {
                                 restartLimitNotification.complete(pluginId to restartAttempts)
                             }
                         }
