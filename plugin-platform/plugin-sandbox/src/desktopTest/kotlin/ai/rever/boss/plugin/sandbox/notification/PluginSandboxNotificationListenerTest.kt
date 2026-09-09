@@ -7,7 +7,8 @@ class PluginSandboxNotificationListenerTest {
     @Test
     fun `restart-limit exhaustion shows details and suppresses the following generic disable`() {
         val toasts = RecordingToastController()
-        val listener = PluginSandboxNotificationListener(BossPluginNotificationService(toasts, displayNameOf = { "Example" }))
+        val listener =
+            PluginSandboxNotificationListener(BossPluginNotificationService(toasts, displayNameOf = { "Example" }))
 
         listener.onPluginRestartLimitExceeded("example.plugin", restartAttempts = 3)
         listener.onPluginDisabled("example.plugin")
