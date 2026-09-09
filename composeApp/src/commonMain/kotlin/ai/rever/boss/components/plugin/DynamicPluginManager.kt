@@ -359,6 +359,9 @@ class DynamicPluginManager(
         @Volatile
         var restartLimitFailureRecorder: ((pluginId: String, restartAttempts: Int) -> Unit)? = null
 
+        @Volatile
+        var restartLimitRecoveryRecorder: ((pluginId: String) -> Unit)? = null
+
         /**
          * Runs swaps decoupled from the caller. The trigger usually fires
          * from a PLUGIN's own coroutine (Toolbox update runs on
@@ -758,6 +761,10 @@ class DynamicPluginManager(
                 managerScope.launch(Dispatchers.Main) {
                     runCatching { reregisterAfterRestart(pluginId) }
                 }
+            }
+
+            override fun onPluginEnabled(pluginId: String) {
+                restartLimitRecoveryRecorder?.invoke(pluginId)
             }
 
             override fun onPluginRestartLimitExceeded(

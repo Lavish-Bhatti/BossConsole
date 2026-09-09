@@ -300,6 +300,24 @@ class PluginSandboxManagerTest {
             }
 
         @Test
+        fun `successful enable reports recovery but missing sandboxes do not`() =
+            runTest {
+                val enabled = mutableListOf<String>()
+                val listener = object : PluginSandboxListener {
+                    override fun onPluginEnabled(pluginId: String) {
+                        assertFalse(manager.isPluginDisabled(pluginId))
+                        enabled += pluginId
+                    }
+                }
+                manager.addListener(listener)
+                manager.createSandbox("plugin-1")
+                manager.disablePlugin("plugin-1")
+                assertTrue(manager.enablePlugin("plugin-1").isSuccess)
+                manager.enablePlugin("missing")
+                assertEquals(listOf("plugin-1"), enabled)
+            }
+
+        @Test
         fun `removeListener stops receiving events`() =
             runTest {
                 var callCount = 0

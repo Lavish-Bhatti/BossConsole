@@ -508,5 +508,23 @@ object PluginPersistence {
         }
     }
 
+    /** A successful Re-enable must survive the next launch as well as this session. */
+    fun recordRestartLimitRecovery(pluginId: String) {
+        synchronized(configLock) {
+            val cfg = loadConfigInternal()
+            val index = cfg.plugins.indexOfFirst { it.pluginId == pluginId }
+            if (index < 0) return
+            cfg.plugins[index] = restartLimitRecoveryEntry(cfg.plugins[index])
+            saveConfigInternal()
+        }
+    }
+
+    internal fun restartLimitRecoveryEntry(entry: InstalledPluginEntry): InstalledPluginEntry =
+        if (entry.failureReason == MAX_RESTART_ATTEMPTS_FAILURE_REASON) {
+            entry.copy(enabled = true, failureReason = null, failureTimestamp = null, failureRestartAttempts = null)
+        } else {
+            entry
+        }
+
     const val MAX_RESTART_ATTEMPTS_FAILURE_REASON = "Maximum restart attempts exceeded"
 }

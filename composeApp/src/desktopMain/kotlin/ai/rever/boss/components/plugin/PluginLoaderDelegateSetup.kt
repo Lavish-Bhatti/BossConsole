@@ -132,6 +132,9 @@ actual object PluginLoaderDelegateSetup {
                 persistRestartLimitDisable(id, attempts)
             }
         }
+        if (DynamicPluginManager.restartLimitRecoveryRecorder == null) {
+            DynamicPluginManager.restartLimitRecoveryRecorder = PluginPersistence::recordRestartLimitRecovery
+        }
         // Lets the crash handler take a crashed plugin out instead of taking the
         // app down. Until this is wired, a plugin crash classifies as fatal and
         // terminates as it always did - which is the honest behaviour for a run

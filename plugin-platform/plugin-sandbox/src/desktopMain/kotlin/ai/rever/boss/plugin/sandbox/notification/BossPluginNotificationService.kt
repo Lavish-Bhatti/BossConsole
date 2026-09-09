@@ -23,6 +23,7 @@ class BossPluginNotificationService(
     private val onDisablePlugin: (pluginId: String) -> Unit = {},
     private val onEnablePlugin: (pluginId: String) -> Unit = {},
     private val onShowErrorDetails: (pluginId: String, error: Throwable) -> Unit = { _, _ -> },
+    private val displayNameOf: (String) -> String = { it },
 ) : PluginNotificationService {
     private val logger = BossLogger.forComponent("BossPluginNotificationService")
 
@@ -134,7 +135,7 @@ class BossPluginNotificationService(
                 type = ToastType.ERROR,
                 title = "Plugin Disabled",
                 message =
-                    "Plugin '$pluginId' was disabled: Maximum restart attempts exceeded " +
+                    "Plugin '${displayNameOf(pluginId)}' was disabled: Maximum restart attempts exceeded " +
                         "($restartAttempts attempts).",
                 action = ToastAction("Re-enable") { onEnablePlugin(pluginId) },
                 duration = ToastDuration.INDEFINITE,

@@ -158,6 +158,9 @@ interface PluginSandboxListener {
      */
     fun onPluginDisabled(pluginId: String) {}
 
+    /** Called after a user successfully re-enables a sandbox. */
+    fun onPluginEnabled(pluginId: String) {}
+
     /**
      * Called only when the watchdog disables a plugin after it has exhausted
      * its automatic restart budget. This is intentionally separate from
@@ -502,6 +505,7 @@ class PluginSandboxManagerImpl(
 
                 // Start the sandbox
                 sandbox.start()
+                notifyListeners { it.onPluginEnabled(pluginId) }
             }
         }
 
