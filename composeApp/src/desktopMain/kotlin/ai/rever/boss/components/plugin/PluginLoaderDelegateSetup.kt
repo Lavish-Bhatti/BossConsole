@@ -127,6 +127,11 @@ actual object PluginLoaderDelegateSetup {
                 PluginRemoval.removalVeto(id, dynamicPluginManager.getBundledPluginsDirectory())
             }
         }
+        if (DynamicPluginManager.restartLimitFailureRecorder == null) {
+            DynamicPluginManager.restartLimitFailureRecorder = { id, attempts ->
+                persistRestartLimitDisable(id, attempts)
+            }
+        }
         // Lets the crash handler take a crashed plugin out instead of taking the
         // app down. Until this is wired, a plugin crash classifies as fatal and
         // terminates as it always did - which is the honest behaviour for a run
@@ -247,6 +252,26 @@ actual object PluginLoaderDelegateSetup {
                 mapOf("pluginId" to pluginId),
             )
         return jarPath != null
+    }
+
+    /** Persist the watchdog's automatic restart-budget disable, including its cause. */
+    internal fun persistRestartLimitDisable(
+        pluginId: String,
+        restartAttempts: Int,
+        isInstalled: (String) -> Boolean = PluginPersistence::isInstalled,
+        jarPathOf: (String) -> String? = DynamicPluginManager::jarPathOf,
+        addInstalled: (String, String, Boolean) -> Unit = { id, jar, enabled ->
+            PluginPersistence.addInstalledPlugin(pluginId = id, jarPath = jar, enabled = enabled)
+        },
+        recordFailure: (String, Int) -> Boolean = { id, attempts ->
+            PluginPersistence.recordRestartLimitExceeded(id, attempts)
+        },
+    ): Boolean {
+        if (!isInstalled(pluginId)) {
+            val jarPath = jarPathOf(pluginId) ?: return false
+            addInstalled(pluginId, jarPath, false)
+        }
+        return recordFailure(pluginId, restartAttempts)
     }
 
     /**

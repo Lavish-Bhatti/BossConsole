@@ -71,4 +71,26 @@ class PersistCrashDisableTest {
         assertEquals(emptyList(), added)
         assertEquals(emptyList(), enabledUpdates)
     }
+
+    @Test
+    fun `restart-limit disable records attempts only through the automatic path`() {
+        var recorded: Pair<String, Int>? = null
+
+        val persisted =
+            PluginLoaderDelegateSetup.persistRestartLimitDisable(
+                pluginId = PLUGIN,
+                restartAttempts = 3,
+                isInstalled = { true },
+                jarPathOf = { error("an installed plugin must not need its jar path") },
+                addInstalled = { _, _, _ -> error("an installed plugin must not be replaced") },
+                recordFailure = { id, attempts ->
+                    recorded = id to attempts
+                    true
+                },
+            )
+
+        assertTrue(persisted)
+        assertEquals(PLUGIN to 3, recorded)
+        assertEquals(emptyList(), enabledUpdates, "manual-disable persistence is not used here")
+    }
 }

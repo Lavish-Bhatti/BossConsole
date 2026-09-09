@@ -353,6 +353,13 @@ class DynamicPluginManager(
         var pluginRemovalVeto: ((pluginId: String) -> String?)? = null
 
         /**
+         * Desktop-owned persistence for a watchdog restart-budget exhaustion.
+         * The platform reports the event, but never needs to know how the app stores it.
+         */
+        @Volatile
+        var restartLimitFailureRecorder: ((pluginId: String, restartAttempts: Int) -> Unit)? = null
+
+        /**
          * Runs swaps decoupled from the caller. The trigger usually fires
          * from a PLUGIN's own coroutine (Toolbox update runs on
          * plugin-manager's scope, evolver hot-reload on terminal-tab's) and
@@ -751,6 +758,13 @@ class DynamicPluginManager(
                 managerScope.launch(Dispatchers.Main) {
                     runCatching { reregisterAfterRestart(pluginId) }
                 }
+            }
+
+            override fun onPluginRestartLimitExceeded(
+                pluginId: String,
+                restartAttempts: Int,
+            ) {
+                restartLimitFailureRecorder?.invoke(pluginId, restartAttempts)
             }
         }
 

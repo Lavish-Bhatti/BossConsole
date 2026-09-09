@@ -159,6 +159,16 @@ interface PluginSandboxListener {
     fun onPluginDisabled(pluginId: String) {}
 
     /**
+     * Called only when the watchdog disables a plugin after it has exhausted
+     * its automatic restart budget. This is intentionally separate from
+     * [onPluginDisabled], which also represents a user-requested disable.
+     */
+    fun onPluginRestartLimitExceeded(
+        pluginId: String,
+        restartAttempts: Int,
+    ) {}
+
+    /**
      * Called when a plugin encounters an error.
      */
     fun onPluginError(
@@ -539,6 +549,7 @@ class PluginSandboxManagerImpl(
             sandbox.stop()
             sandbox.setDisabled()
             disabledPlugins.add(pluginId)
+            notifyListeners { it.onPluginRestartLimitExceeded(pluginId, metrics.restartAttempts) }
             notifyListeners { it.onPluginDisabled(pluginId) }
             // Last: prevents further restart attempts, and cancels us.
             watchdogs[pluginId]?.stop()

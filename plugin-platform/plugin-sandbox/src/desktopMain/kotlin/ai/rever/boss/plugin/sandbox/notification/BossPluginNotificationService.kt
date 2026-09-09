@@ -116,6 +116,32 @@ class BossPluginNotificationService(
         )
     }
 
+    override fun notifyPluginRestartLimitExceeded(
+        pluginId: String,
+        restartAttempts: Int,
+    ) {
+        logger.error(
+            LogCategory.SYSTEM,
+            "Notifying plugin restart limit exceeded",
+            mapOf(
+                "pluginId" to pluginId,
+                "restartAttempts" to restartAttempts,
+            ),
+        )
+
+        toastController.show(
+            ToastMessage(
+                type = ToastType.ERROR,
+                title = "Plugin Disabled",
+                message =
+                    "Plugin '$pluginId' was disabled: Maximum restart attempts exceeded " +
+                        "($restartAttempts attempts).",
+                action = ToastAction("Re-enable") { onEnablePlugin(pluginId) },
+                duration = ToastDuration.INDEFINITE,
+            ),
+        )
+    }
+
     override fun notifyPluginDisabled(pluginId: String) {
         logger.error(
             LogCategory.SYSTEM,

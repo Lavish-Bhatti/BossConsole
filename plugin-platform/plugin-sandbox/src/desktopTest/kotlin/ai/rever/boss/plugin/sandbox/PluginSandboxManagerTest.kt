@@ -246,10 +246,18 @@ class PluginSandboxManagerTest {
         fun `listener receives onPluginDisabled event`() =
             runTest {
                 var receivedPluginId: String? = null
+                var restartLimitReported = false
                 val listener =
                     object : PluginSandboxListener {
                         override fun onPluginDisabled(pluginId: String) {
                             receivedPluginId = pluginId
+                        }
+
+                        override fun onPluginRestartLimitExceeded(
+                            pluginId: String,
+                            restartAttempts: Int,
+                        ) {
+                            restartLimitReported = true
                         }
                     }
                 manager.addListener(listener)
@@ -258,6 +266,7 @@ class PluginSandboxManagerTest {
                 manager.disablePlugin("plugin-1")
 
                 assertEquals("plugin-1", receivedPluginId)
+                assertFalse(restartLimitReported, "a normal disable is not a restart-limit failure")
             }
 
         @Test
@@ -376,10 +385,15 @@ class PluginSandboxManagerTest {
                 val budgetManager = PluginSandboxManagerImpl(config)
                 try {
                     val disabledNotification = CompletableDeferred<String>()
+                    val restartLimitNotification = CompletableDeferred<Pair<String, Int>>()
                     val listener =
                         object : PluginSandboxListener {
                             override fun onPluginDisabled(pluginId: String) {
                                 disabledNotification.complete(pluginId)
+                            }
+
+                            override fun onPluginRestartLimitExceeded(pluginId: String, restartAttempts: Int) {
+                                restartLimitNotification.complete(pluginId to restartAttempts)
                             }
                         }
                     budgetManager.addListener(listener)
@@ -405,6 +419,10 @@ class PluginSandboxManagerTest {
                     // Await notification instead of racing that thread through an unsynchronized variable.
                     assertEquals("plugin-1", withTimeout(10_000) { disabledNotification.await() })
                     assertTrue(budgetManager.isPluginDisabled("plugin-1"))
+                    assertEquals(
+                        "plugin-1" to 0,
+                        withTimeout(10_000) { restartLimitNotification.await() },
+                    )
 
                     val terminated =
                         withTimeoutOrNull(5_000) {
