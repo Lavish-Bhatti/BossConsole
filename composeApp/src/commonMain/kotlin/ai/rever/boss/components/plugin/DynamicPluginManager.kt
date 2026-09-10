@@ -1241,6 +1241,9 @@ class DynamicPluginManager(
         // hops to the UI thread, which may re-enter manager operations (same
         // reasoning as pluginTabsTeardown in uninstallPlugin).
         result.getOrNull()?.takeIf { it.state == PluginState.LOADED }?.let { info ->
+            recordRestartRecoveryIfRunning(info, sandboxManager.isPluginDisabled(info.manifest.pluginId)) { pluginId ->
+                restartLimitRecoveryRecorder?.invoke(pluginId)
+            }
             notifyPanelsRefresh(info.manifest.pluginId)
         }
         // Which build is now running. Every install path lands here (cold start, update, reload,
