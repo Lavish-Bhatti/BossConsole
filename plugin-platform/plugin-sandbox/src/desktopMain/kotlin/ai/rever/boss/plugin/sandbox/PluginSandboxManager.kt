@@ -557,6 +557,13 @@ class PluginSandboxManagerImpl(
                     "attempts" to metrics.restartAttempts,
                 ),
             )
+            // Report the detected budget failure while this instance is still current. The
+            // later generic disable notification remains after teardown, preserving toast suppression.
+            synchronized(sandboxes) {
+                if (sandboxes[pluginId] === sandbox) {
+                    notifyListeners { it.onPluginRestartLimitExceeded(pluginId, metrics.restartAttempts) }
+                }
+            }
             // Order matters, and it is the opposite of what reads naturally.
             // This runs inside the watchdog's own coroutine (checkHealth ->
             // triggerRestart -> onRestartRequested), so stopping the watchdog
@@ -570,7 +577,6 @@ class PluginSandboxManagerImpl(
             val watchdog = watchdogs[pluginId]
             sandbox.stop()
             if (markDisabledIfCurrent(sandbox)) {
-                notifyListeners { it.onPluginRestartLimitExceeded(pluginId, metrics.restartAttempts) }
                 notifyListeners { it.onPluginDisabled(pluginId) }
                 // Last: stop this instance's watchdog, never a replacement's.
                 watchdog?.stop()
